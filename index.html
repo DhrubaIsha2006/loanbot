@@ -1,0 +1,187 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>LoanBot — Demo Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #0f1724;
+        --accent: #7c3aed;
+        --muted: #94a3b8;
+      }
+      html, body, #root { height: 100%; margin: 0; }
+      body {
+        background: radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent 8%),
+                    radial-gradient(900px 500px at 90% 90%, rgba(14,165,233,0.06), transparent 12%),
+                    var(--bg);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      }
+      .glass {
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+        border: 1px solid rgba(255,255,255,0.04);
+        backdrop-filter: blur(6px);
+      }
+      .chat-bubble {
+        max-width: 78%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        line-height: 1.2;
+      }
+      .from-user {
+        background: linear-gradient(90deg, rgba(124,58,237,0.18), rgba(99,102,241,0.12));
+        color: #fff;
+        border: 1px solid rgba(124,58,237,0.18);
+      }
+      .from-bot {
+        background: rgba(255,255,255,0.02);
+        color: var(--muted);
+        border: 1px solid rgba(255,255,255,0.03);
+      }
+      .chip { cursor: pointer; transition: transform .12s ease; }
+      .chip:hover { transform: translateY(-3px); }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- React + Babel (for quick demo / no build) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React;
+
+      function App() {
+        const [messages, setMessages] = useState([
+          { id: 1, role: 'bot', text: 'Hello! I am LoanBot 🤖. I can help you get a personal loan. What amount do you need?' }
+        ]);
+        const chatRef = useRef();
+
+        useEffect(() => {
+          const el = chatRef.current;
+          if (el) el.scrollTop = el.scrollHeight;
+        }, [messages]);
+
+        const pushMessage = (msg) => setMessages(prev => [...prev, msg]);
+
+        const handleSend = () => {
+          const input = document.getElementById('userInput');
+          const text = input.value.trim();
+          if (!text) return;
+          pushMessage({ id: Date.now(), role: 'user', text });
+          input.value = '';
+          simulateResponse(text);
+        };
+
+        const simulateResponse = (text) => {
+          const lower = text.toLowerCase();
+          setTimeout(() => {
+            if (lower.includes('loan') || lower.match(/\d/)) {
+              const match = text.match(/\d[0-9,]*/);
+              const amt = match ? parseInt(match[0].replace(/,/g, '')) : 100000;
+              if (amt > 200000) {
+                pushMessage({ id: Date.now()+1, role: 'bot', text: 'We need one more detail: please upload your salary proof or tell your monthly income.' });
+              } else {
+                pushMessage({ id: Date.now()+2, role: 'bot', text: `Great — you are eligible for instant pre-approval. Shall I generate a sanction letter for ₹${amt}?` });
+              }
+            } else if (lower.includes('yes')) {
+              pushMessage({ id: Date.now()+3, role: 'bot', text: '✅ Approved — sanction letter generated. [Download PDF]' });
+            } else if (lower.includes('hi') || lower.includes('hello')) {
+              pushMessage({ id: Date.now()+4, role: 'bot', text: 'Hi there! Tell me how much loan you need.' });
+            } else {
+              pushMessage({ id: Date.now()+5, role: 'bot', text: "I can help with personal loans. Try saying 'I need a loan of 150000'." });
+            }
+          }, 600);
+        };
+
+        const handleUpload = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            pushMessage({ id: Date.now()+10, role: 'user', text: `[Uploaded file] ${file.name}` });
+            setTimeout(() => pushMessage({ id: Date.now()+11, role: 'bot', text: 'File received. Processing (OCR)...' }), 600);
+            setTimeout(() => pushMessage({ id: Date.now()+12, role: 'bot', text: '✅ Salary proof verified. You are approved for ₹150,000. Shall I generate the sanction letter?' }), 1500);
+          }
+        };
+
+        return (
+          <div className="flex items-center justify-center p-6 h-screen">
+            <div className="w-full max-w-5xl h-[86vh] grid grid-cols-3 gap-6">
+              {/* Left Sidebar */}
+              <div className="col-span-1 glass rounded-2xl p-5 flex flex-col gap-4">
+                <div>
+                  <h1 className="text-white text-xl font-semibold">LoanBot • Demo</h1>
+                  <p className="text-sm text-[color:var(--muted)] mt-1">Agentic AI — Master + Worker Agents</p>
+                </div>
+                <div className="bg-gradient-to-r from-purple-800/20 to-cyan-700/10 p-3 rounded-xl">
+                  <h2 className="text-sm text-white font-semibold">Explainable Decision Trace</h2>
+                  <p className="text-xs text-[color:var(--muted)]">Every decision shows concise reasons & audit ID</p>
+                  <div className="mt-3 text-xs text-[color:var(--muted)]">Last Decision</div>
+                  <div className="mt-1 text-sm text-white">Request Salary Proof • <span className="text-[color:var(--accent)] font-medium">Confidence 0.78</span></div>
+                  <div className="flex gap-2 mt-3">
+                    <button onClick={() => alert('Why: EMI > 50% salary, amount > preapproved limit')} className="px-3 py-1 rounded-full text-xs bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.04)] text-white">Why?</button>
+                    <button onClick={() => alert('Audit log downloaded')} className="px-3 py-1 rounded-full text-xs bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.03)] text-[color:var(--muted)]">View audit</button>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-xs text-[color:var(--muted)]">Adaptive Nudges</h3>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {['Try 48 months (EMI ₹4,200)', 'Lower amount ₹1L', 'Show pre-approved offers', 'Speak to agent'].map((chip, i) => (
+                      <div key={i} onClick={() => simulateResponse(chip)} className="chip px-3 py-2 rounded-full bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.03)] text-white text-sm inline-block">
+                        {chip}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-auto text-[color:var(--muted)] text-xs">Demo data only • PII masked</div>
+              </div>
+
+              {/* Chat Window */}
+              <div className="col-span-2 glass rounded-2xl p-4 flex flex-col">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-700 to-purple-600 flex items-center justify-center text-white font-bold">LB</div>
+                    <div>
+                      <div className="text-white font-semibold">LoanBot Chat</div>
+                      <div className="text-xs text-[color:var(--muted)]">Smart conversational funnel • instant decisions</div>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 rounded-full bg-[rgba(255,255,255,0.03)] text-[color:var(--accent)] font-medium">Live Demo</div>
+                </div>
+
+                <div ref={chatRef} id="chatWindow" className="flex-1 overflow-auto p-3 rounded-xl border border-[rgba(255,255,255,0.02)] bg-gradient-to-b from-transparent to-black/5">
+                  {messages.map(m => (
+                    <div key={m.id} className={m.role === 'user' ? 'flex justify-end mb-3' : 'flex justify-start mb-3'}>
+                      <div className={`chat-bubble ${m.role === 'user' ? 'from-user' : 'from-bot'}`}>
+                        <div className="font-semibold mb-1 text-sm">{m.role === 'user' ? 'You' : 'LoanBot'}</div>
+                        <div className="text-sm">{m.text}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex items-center gap-3">
+                  <input id="userInput" className="flex-1 px-4 py-3 rounded-xl bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.03)] text-white focus:outline-none" placeholder="Write a message..." />
+                  <label className="cursor-pointer">
+                    <input type="file" className="hidden" onChange={handleUpload} />
+                    <div className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-500 text-white font-semibold">Upload</div>
+                  </label>
+                  <button onClick={handleSend} className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#06b6d4] to-[#7c3aed] text-white font-semibold">Send</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
+
